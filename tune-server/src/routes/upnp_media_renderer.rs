@@ -487,6 +487,7 @@ fn spawn_gapless_watcher(state: AppState, zone_id: i64) {
     tokio::spawn(async move {
         let mut was_playing = false;
         loop {
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
             let pending = sessions()
                 .lock()
                 .ok()
@@ -495,33 +496,10 @@ fn spawn_gapless_watcher(state: AppState, zone_id: i64) {
 
             let ps = state.playback.get_state(zone_id).await;
             match ps.state {
-                tune_core::playback::PlayState::Playing => {
-                    was_playing = true;
-                    // Pré-roll adaptatif : accélère l'observation à l'approche de la fin de piste
-                    let session_dur = sessions()
-                        .lock()
-                        .ok()
-                        .and_then(|s| s.get(&zone_id).and_then(|x| x.duration_ms))
-                        .unwrap_or(0);
-                    let dur = ps
-                        .now_playing
-                        .as_ref()
-                        .map(|np| np.duration_ms)
-                        .unwrap_or(session_dur);
-                    let remaining = dur.saturating_sub(ps.position_ms);
-                    if remaining > 2500 {
-                        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                    } else if remaining > 400 {
-                        tokio::time::sleep(std::time::Duration::from_millis(150)).await;
-                    } else {
-                        tokio::time::sleep(std::time::Duration::from_millis(40)).await;
-                    }
-                }
-                tune_core::playback::PlayState::Paused => {
-                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                }
+                tune_core::playback::PlayState::Playing => was_playing = true,
+                tune_core::playback::PlayState::Paused => {}
                 tune_core::playback::PlayState::Stopped if was_playing => {
-                    // Fin naturelle : promouvoir la suivante et relancer immédiatement sans latence.
+                    // Fin naturelle : promouvoir la suivante et relancer.
                     if let Ok(mut s) = sessions().lock() {
                         s.insert(
                             zone_id,
@@ -551,18 +529,14 @@ fn spawn_gapless_watcher(state: AppState, zone_id: i64) {
                         ..Default::default()
                     };
                     match state.orchestrator.play(req).await {
-                        Ok(_) => {
-                            info!(zone_id, uri = %next.uri, "upnp_renderer_gapless_advance_fast")
-                        }
+                        Ok(_) => info!(zone_id, uri = %next.uri, "upnp_renderer_gapless_advance"),
                         Err(e) => {
                             warn!(zone_id, error = %e, "upnp_renderer_gapless_advance_failed")
                         }
                     }
                     break;
                 }
-                tune_core::playback::PlayState::Stopped => {
-                    tokio::time::sleep(std::time::Duration::from_millis(250)).await;
-                }
+                tune_core::playback::PlayState::Stopped => {}
             }
         }
         if let Ok(mut w) = watchers().lock() {
