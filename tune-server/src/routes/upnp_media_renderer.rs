@@ -330,7 +330,11 @@ async fn avtransport_control(
                         == Some(&session.uri);
 
                 if is_paused_same_uri {
-                    match state.orchestrator.resume(zone_id, device_id.as_deref()).await {
+                    match state
+                        .orchestrator
+                        .resume(zone_id, device_id.as_deref())
+                        .await
+                    {
                         Ok(()) => {
                             info!(zone_id, uri = %session.uri, "upnp_renderer_play_resumed");
                             upnp_renderer::empty_response("Play")
