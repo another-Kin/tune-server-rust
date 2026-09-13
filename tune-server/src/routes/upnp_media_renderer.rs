@@ -426,10 +426,15 @@ async fn renderingcontrol_control(
             upnp_renderer::volume_response(&snapshot(&state, zone_id).await)
         }
         RendererCommand::SetVolume(v) => {
-            let volume_locked = tune_core::audio::audiophile::volume_lock_enabled(&state.backend, zone_id)
-                && tune_core::audio::audiophile::zone_enabled(&state.backend, zone_id);
+            let volume_locked =
+                tune_core::audio::audiophile::volume_lock_enabled(&state.backend, zone_id)
+                    && tune_core::audio::audiophile::zone_enabled(&state.backend, zone_id);
             if volume_locked {
-                info!(zone_id, requested_v = v, "upnp_renderer_set_volume_locked_bitperfect_preserved");
+                info!(
+                    zone_id,
+                    requested_v = v,
+                    "upnp_renderer_set_volume_locked_bitperfect_preserved"
+                );
                 upnp_renderer::empty_response("SetVolume")
             } else {
                 match state
@@ -498,7 +503,11 @@ fn spawn_gapless_watcher(state: AppState, zone_id: i64) {
                         .ok()
                         .and_then(|s| s.get(&zone_id).and_then(|x| x.duration_ms))
                         .unwrap_or(0);
-                    let dur = ps.now_playing.as_ref().map(|np| np.duration_ms).unwrap_or(session_dur);
+                    let dur = ps
+                        .now_playing
+                        .as_ref()
+                        .map(|np| np.duration_ms)
+                        .unwrap_or(session_dur);
                     let remaining = dur.saturating_sub(ps.position_ms);
                     if remaining > 2500 {
                         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
@@ -542,7 +551,9 @@ fn spawn_gapless_watcher(state: AppState, zone_id: i64) {
                         ..Default::default()
                     };
                     match state.orchestrator.play(req).await {
-                        Ok(_) => info!(zone_id, uri = %next.uri, "upnp_renderer_gapless_advance_fast"),
+                        Ok(_) => {
+                            info!(zone_id, uri = %next.uri, "upnp_renderer_gapless_advance_fast")
+                        }
                         Err(e) => {
                             warn!(zone_id, error = %e, "upnp_renderer_gapless_advance_failed")
                         }
