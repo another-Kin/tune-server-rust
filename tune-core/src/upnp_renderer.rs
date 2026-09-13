@@ -706,13 +706,22 @@ mod tests {
     #[test]
     fn parse_set_mute_validation() {
         let mute_true = soap("SetMute", "<DesiredMute>1</DesiredMute>");
-        assert_eq!(parse_renderer_command(&mute_true), RendererCommand::SetMute(true));
+        assert_eq!(
+            parse_renderer_command(&mute_true),
+            RendererCommand::SetMute(true)
+        );
 
         let mute_false = soap("SetMute", "<DesiredMute>0</DesiredMute>");
-        assert_eq!(parse_renderer_command(&mute_false), RendererCommand::SetMute(false));
+        assert_eq!(
+            parse_renderer_command(&mute_false),
+            RendererCommand::SetMute(false)
+        );
 
         let mute_text_false = soap("SetMute", "<DesiredMute>false</DesiredMute>");
-        assert_eq!(parse_renderer_command(&mute_text_false), RendererCommand::SetMute(false));
+        assert_eq!(
+            parse_renderer_command(&mute_text_false),
+            RendererCommand::SetMute(false)
+        );
 
         let mute_invalid = soap("SetMute", "<DesiredMute>invalid</DesiredMute>");
         assert_eq!(
