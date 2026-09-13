@@ -142,7 +142,6 @@ pub fn validate_bitperfect_sample_rate(
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -294,7 +293,11 @@ mod tests {
         assert!(!strict_bitperfect_enabled(&db, 1));
 
         // Active via zone override avec mode pure actif
-        set(&db, "zone_1_audiophile", r#"{"enabled":true,"strict_bitperfect":true}"#);
+        set(
+            &db,
+            "zone_1_audiophile",
+            r#"{"enabled":true,"strict_bitperfect":true}"#,
+        );
         assert!(strict_bitperfect_enabled(&db, 1));
 
         // Zone ordinaire : meme avec le flag global, ne s'active pas si pure n'est pas actif
